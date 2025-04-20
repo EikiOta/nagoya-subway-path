@@ -1,0 +1,41 @@
+# 共通の無視ファイル
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.idea/
+.vscode/
+*.log
+
+# フロントエンド固有
+/frontend/node_modules/
+/frontend/dist/
+/frontend/coverage/
+/frontend/.env*
+
+# バックエンド固有
+/backend/__pycache__/
+/backend/*.py[cod]
+/backend/*$py.class
+/backend/.env*
+/backend/venv/
+/backend/.venv/
+/backend/env/
+/backend/ENV/
+/backend/.Python
+/backend/build/
+/backend/develop-eggs/
+/backend/dist/
+/backend/downloads/
+/backend/eggs/
+/backend/.eggs/
+/backend/lib/
+/backend/lib64/
+/backend/parts/
+/backend/sdist/
+/backend/var/
+/backend/*.egg-info/
+/backend/.installed.cfg
+/backend/*.egg
