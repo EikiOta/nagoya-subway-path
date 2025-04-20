@@ -1,5 +1,4 @@
 // src/App.jsx
-import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { CssBaseline, Box, ThemeProvider, createTheme } from '@mui/material';
 import { RouteProvider } from './context/RouteContext';
@@ -18,6 +17,23 @@ const theme = createTheme({
     secondary: {
       main: '#dc004e',
     },
+    success: {
+      main: '#2e7d32',
+      light: '#4caf50',
+      // カスタムカラー追加
+      100: '#e8f5e9'
+    },
+    primary: {
+      main: '#1976d2',
+      // カスタムカラー追加
+      50: '#e3f2fd',
+      100: '#bbdefb'
+    },
+    info: {
+      main: '#0288d1',
+      light: '#03a9f4',
+      50: '#e1f5fe'
+    }
   },
   typography: {
     fontFamily: [

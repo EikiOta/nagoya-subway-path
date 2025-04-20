@@ -7,32 +7,39 @@ import {
   Select, 
   MenuItem, 
   Typography, 
-  Button, 
   Chip,
   Paper,
   IconButton,
-  Stack
+  Divider,
+  Tooltip,
+  Alert
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useRouteContext } from '../context/RouteContext';
-import { stations, getStationsByLine } from '../data/stations';
+import { stations } from '../data/stations';
 import { lines } from '../data/lines';
 
 const StationSelector = () => {
-  const { stations: routeStations, updateStations } = useRouteContext();
-  const [stationsByLine, setStationsByLine] = useState({});
-  const [selectedLine, setSelectedLine] = useState('');
+  const { stations: routeStations, updateStations, searchRoutes } = useRouteContext();
+  const [showWarning, setShowWarning] = useState(false);
   
+  // 経由駅が3つ以上になった場合に警告を表示
   useEffect(() => {
-    // 路線ごとの駅リストを作成
-    const stationMap = {};
-    lines.forEach(line => {
-      stationMap[line.id] = getStationsByLine(line.id);
-    });
-    setStationsByLine(stationMap);
-  }, []);
+    if (routeStations.via && routeStations.via.length >= 3) {
+      setShowWarning(true);
+    } else {
+      setShowWarning(false);
+    }
+  }, [routeStations.via]);
+  
+  // 駅選択時に自動的にルート検索を実行
+  useEffect(() => {
+    if (routeStations.start && routeStations.end) {
+      searchRoutes();
+    }
+  }, [routeStations.start, routeStations.end, routeStations.via, searchRoutes]);
   
   const handleStationChange = (type, value) => {
     if (type === 'start' || type === 'end') {
@@ -57,45 +64,27 @@ const StationSelector = () => {
   
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        駅の選択
-      </Typography>
-      
-      <Box sx={{ mb: 2 }}>
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="line-label">路線選択</InputLabel>
-          <Select
-            labelId="line-label"
-            id="line"
-            value={selectedLine}
-            label="路線選択"
-            onChange={(e) => setSelectedLine(e.target.value)}
-          >
-            {lines.map(line => (
-              <MenuItem key={line.id} value={line.id}>
-                <Box component="span" sx={{ 
-                  width: 16, 
-                  height: 16, 
-                  borderRadius: '50%', 
-                  backgroundColor: line.color, 
-                  display: 'inline-block',
-                  mr: 1 
-                }} />
-                {line.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6" gutterBottom sx={{ mb: 0, flexGrow: 1 }}>
+          必ず通る駅（始点・終点）
+        </Typography>
+        <Tooltip title="名古屋市営地下鉄の定期券は「一筆書き」で描ける経路で乗換が3回以内である必要があります。経路が交差したり駅が重複する場合は発売できません。">
+          <IconButton size="small">
+            <HelpOutlineIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
       
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', gap: 2, mb: 3 }}>
+      <Divider sx={{ mb: 2 }} />
+      
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', gap: 2 }}>
         <FormControl fullWidth>
-          <InputLabel id="start-station-label">出発駅</InputLabel>
+          <InputLabel id="start-station-label" required>出発駅</InputLabel>
           <Select
             labelId="start-station-label"
             id="start-station"
             value={routeStations.start?.id || ''}
-            label="出発駅"
+            label="出発駅 *"
             onChange={(e) => {
               const selectedStation = stations.find(s => s.id === e.target.value);
               handleStationChange('start', selectedStation);
@@ -103,23 +92,36 @@ const StationSelector = () => {
           >
             {stations.map(station => (
               <MenuItem key={station.id} value={station.id}>
+                <Box component="span" sx={{ 
+                  width: 12, 
+                  height: 12, 
+                  borderRadius: '50%', 
+                  backgroundColor: lines.find(l => l.id === station.lineId)?.color || '#ccc', 
+                  display: 'inline-block',
+                  mr: 1 
+                }} />
                 {station.name}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
         
-        <IconButton onClick={handleSwapStations} sx={{ mx: 1 }}>
+        <IconButton 
+          onClick={handleSwapStations} 
+          sx={{ mx: 1 }}
+          disabled={!routeStations.start || !routeStations.end}
+          title="出発駅と到着駅を入れ替え"
+        >
           <SwapVertIcon />
         </IconButton>
         
         <FormControl fullWidth>
-          <InputLabel id="end-station-label">到着駅</InputLabel>
+          <InputLabel id="end-station-label" required>到着駅</InputLabel>
           <Select
             labelId="end-station-label"
             id="end-station"
             value={routeStations.end?.id || ''}
-            label="到着駅"
+            label="到着駅 *"
             onChange={(e) => {
               const selectedStation = stations.find(s => s.id === e.target.value);
               handleStationChange('end', selectedStation);
@@ -127,69 +129,19 @@ const StationSelector = () => {
           >
             {stations.map(station => (
               <MenuItem key={station.id} value={station.id}>
+                <Box component="span" sx={{ 
+                  width: 12, 
+                  height: 12, 
+                  borderRadius: '50%', 
+                  backgroundColor: lines.find(l => l.id === station.lineId)?.color || '#ccc', 
+                  display: 'inline-block',
+                  mr: 1 
+                }} />
                 {station.name}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-      </Box>
-      
-      <Box>
-        <Typography variant="subtitle1" gutterBottom>
-          経由駅
-        </Typography>
-        
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          {routeStations.via && routeStations.via.map((station, index) => (
-            <Chip
-              key={index}
-              label={station.name}
-              onDelete={() => handleRemoveVia(index)}
-              deleteIcon={<DeleteIcon />}
-            />
-          ))}
-          {(!routeStations.via || routeStations.via.length === 0) && (
-            <Typography variant="body2" color="text.secondary">
-              経由駅は指定されていません
-            </Typography>
-          )}
-        </Box>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel id="via-station-label">経由駅を追加</InputLabel>
-            <Select
-              labelId="via-station-label"
-              id="via-station"
-              value=""
-              label="経由駅を追加"
-              onChange={(e) => {
-                if (e.target.value) {
-                  const selectedStation = stations.find(s => s.id === e.target.value);
-                  handleStationChange('via', selectedStation);
-                  e.target.value = '';
-                }
-              }}
-            >
-              {stations.map(station => (
-                <MenuItem key={station.id} value={station.id}>
-                  {station.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <Button 
-            variant="outlined" 
-            startIcon={<AddIcon />}
-            disabled={!selectedLine}
-            onClick={() => {
-              // これは単にUIのためのボタンなので、Select の onChange で処理する
-            }}
-          >
-            追加
-          </Button>
-        </Box>
       </Box>
     </Paper>
   );
