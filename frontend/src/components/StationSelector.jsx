@@ -12,9 +12,10 @@ import {
   IconButton,
   Divider,
   Tooltip,
-  Alert
+  Alert,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useRouteContext } from '../context/RouteContext';
@@ -23,16 +24,8 @@ import { lines } from '../data/lines';
 
 const StationSelector = () => {
   const { stations: routeStations, updateStations, searchRoutes } = useRouteContext();
-  const [showWarning, setShowWarning] = useState(false);
-  
-  // 経由駅が3つ以上になった場合に警告を表示
-  useEffect(() => {
-    if (routeStations.via && routeStations.via.length >= 3) {
-      setShowWarning(true);
-    } else {
-      setShowWarning(false);
-    }
-  }, [routeStations.via]);
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   
   // 駅選択時に自動的にルート検索を実行
   useEffect(() => {
@@ -44,15 +37,7 @@ const StationSelector = () => {
   const handleStationChange = (type, value) => {
     if (type === 'start' || type === 'end') {
       updateStations({ [type]: value });
-    } else if (type === 'via') {
-      updateStations({ via: [...(routeStations.via || []), value] });
     }
-  };
-  
-  const handleRemoveVia = (index) => {
-    const newVia = [...routeStations.via];
-    newVia.splice(index, 1);
-    updateStations({ via: newVia });
   };
   
   const handleSwapStations = () => {
@@ -60,6 +45,18 @@ const StationSelector = () => {
       start: routeStations.end,
       end: routeStations.start
     });
+  };
+  
+  // ドロップダウンのスタイル設定
+  const selectProps = {
+    MenuProps: {
+      PaperProps: {
+        style: {
+          maxHeight: 300,
+          width: isSmallScreen ? 'auto' : 350,
+        },
+      },
+    },
   };
   
   return (
@@ -89,18 +86,25 @@ const StationSelector = () => {
               const selectedStation = stations.find(s => s.id === e.target.value);
               handleStationChange('start', selectedStation);
             }}
+            sx={{ minWidth: { md: 200 } }}
+            {...selectProps}
           >
             {stations.map(station => (
               <MenuItem key={station.id} value={station.id}>
-                <Box component="span" sx={{ 
-                  width: 12, 
-                  height: 12, 
-                  borderRadius: '50%', 
-                  backgroundColor: lines.find(l => l.id === station.lineId)?.color || '#ccc', 
-                  display: 'inline-block',
-                  mr: 1 
-                }} />
-                {station.name}
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box component="span" sx={{ 
+                    width: 12, 
+                    height: 12, 
+                    borderRadius: '50%', 
+                    backgroundColor: lines.find(l => l.id === station.lineId)?.color || '#ccc', 
+                    display: 'inline-block',
+                    mr: 1 
+                  }} />
+                  <Typography noWrap>{station.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    {lines.find(l => l.id === station.lineId)?.name || ''}
+                  </Typography>
+                </Box>
               </MenuItem>
             ))}
           </Select>
@@ -126,18 +130,25 @@ const StationSelector = () => {
               const selectedStation = stations.find(s => s.id === e.target.value);
               handleStationChange('end', selectedStation);
             }}
+            sx={{ minWidth: { md: 200 } }}
+            {...selectProps}
           >
             {stations.map(station => (
               <MenuItem key={station.id} value={station.id}>
-                <Box component="span" sx={{ 
-                  width: 12, 
-                  height: 12, 
-                  borderRadius: '50%', 
-                  backgroundColor: lines.find(l => l.id === station.lineId)?.color || '#ccc', 
-                  display: 'inline-block',
-                  mr: 1 
-                }} />
-                {station.name}
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box component="span" sx={{ 
+                    width: 12, 
+                    height: 12, 
+                    borderRadius: '50%', 
+                    backgroundColor: lines.find(l => l.id === station.lineId)?.color || '#ccc', 
+                    display: 'inline-block',
+                    mr: 1 
+                  }} />
+                  <Typography noWrap>{station.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    {lines.find(l => l.id === station.lineId)?.name || ''}
+                  </Typography>
+                </Box>
               </MenuItem>
             ))}
           </Select>

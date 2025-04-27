@@ -79,8 +79,9 @@ export const RouteProvider = ({ children }) => {
       
       if (zones > minRequiredZones) {
         // 追加の区間を使用した経路（より多くの駅を経由）
+        // H10は栄駅（東山線）を参照（以前はT10）
         const extraPath = {
-          route: [start, ...(zones > 2 ? [getStationById('T10')] : []), end],
+          route: [start, ...(zones > 2 ? [getStationById('H10')] : []), end],
           transfers: zones > 2 ? 2 : 1,
           duration: 15 + (zones * 3),
           zones: zones

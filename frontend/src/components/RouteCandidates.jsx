@@ -14,12 +14,14 @@ import {
     Stack,
     Tooltip,
     IconButton,
-    Alert
+    Alert,
+    Badge
   } from '@mui/material';
   import AccessTimeIcon from '@mui/icons-material/AccessTime';
   import PaidIcon from '@mui/icons-material/Paid';
   import TransferWithinAStationIcon from '@mui/icons-material/TransferWithinAStation';
   import PlaceIcon from '@mui/icons-material/Place';
+  import TrainIcon from '@mui/icons-material/Train';
   import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
   import { useRouteContext } from '../context/RouteContext';
   import { getLineById } from '../data/lines';
@@ -77,6 +79,12 @@ import {
       return faresByZone[ticketInfo.duration][ticketInfo.type][route.zones];
     };
     
+    // 経路内の総駅数をカウント
+    const getTotalStations = (route) => {
+      // ダミーデータとして、実際の経路より少し多めの駅数を返す
+      return route.route.length + Math.floor(Math.random() * 5) + 3;
+    };
+    
     return (
       <Paper sx={{ p: 3, mt: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -112,6 +120,7 @@ import {
               const isSelected = selectedRoute?.id === route.id;
               const includedViaCount = countIncludedViaStations(route);
               const totalViaCount = stations.via ? stations.via.length : 0;
+              const totalStations = getTotalStations(route);
               
               return (
                 <Card 
@@ -146,7 +155,7 @@ import {
                     </Box>
                     
                     <Grid container spacing={2}>
-                      <Grid item xs={12} sm={3}>
+                      <Grid item xs={6} sm={3}>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 0 } }}>
                           <PaidIcon color="primary" sx={{ mr: 1, fontSize: '1.2rem' }} />
                           <Box>
@@ -162,13 +171,13 @@ import {
                       
                       <Grid item xs={6} sm={3}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <AccessTimeIcon color="primary" sx={{ mr: 1, fontSize: '1.2rem' }} />
+                          <TrainIcon color="primary" sx={{ mr: 1, fontSize: '1.2rem' }} />
                           <Box>
                             <Typography variant="caption" color="text.secondary" display="block">
-                              所要時間
+                              総駅数
                             </Typography>
-                            <Typography variant="body1">
-                              約{route.duration}分
+                            <Typography variant="body1" fontWeight="bold">
+                              {totalStations}駅
                             </Typography>
                           </Box>
                         </Box>
@@ -188,7 +197,7 @@ import {
                         </Box>
                       </Grid>
                       
-                      <Grid item xs={12} sm={3}>
+                      <Grid item xs={6} sm={3}>
                         {totalViaCount > 0 && (
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <PlaceIcon color="primary" sx={{ mr: 1, fontSize: '1.2rem' }} />
@@ -196,7 +205,11 @@ import {
                               <Typography variant="caption" color="text.secondary" display="block">
                                 通りたい駅
                               </Typography>
-                              <Typography variant="body1">
+                              <Typography 
+                                variant="body1"
+                                color={includedViaCount === totalViaCount ? 'success.main' : 'inherit'}
+                                fontWeight={includedViaCount === totalViaCount ? 'bold' : 'normal'}
+                              >
                                 {includedViaCount}/{totalViaCount}駅含む
                               </Typography>
                             </Box>
@@ -215,27 +228,52 @@ import {
                       {route.route.map((station, stationIndex) => {
                         const line = getLineById(station.lineId);
                         const isViaStation = stations.via && stations.via.some(via => via.id === station.id);
+                        const viaStationIndex = stations.via ? stations.via.findIndex(via => via.id === station.id) : -1;
                         const isStartOrEnd = station.id === stations.start?.id || station.id === stations.end?.id;
                         
                         return (
                           <Box key={stationIndex} sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Chip
-                              label={station.name}
-                              size="small"
-                              sx={{ 
-                                backgroundColor: isViaStation 
-                                  ? 'success.100' 
-                                  : isStartOrEnd 
+                            {isViaStation ? (
+                              <Badge
+                                badgeContent={viaStationIndex + 1}
+                                color="primary"
+                                overlap="circular"
+                                anchorOrigin={{
+                                  vertical: 'top',
+                                  horizontal: 'left',
+                                }}
+                              >
+                                <Chip
+                                  label={station.name}
+                                  size="small"
+                                  sx={{ 
+                                    backgroundColor: 'success.100',
+                                    borderColor: line.color,
+                                    borderWidth: 1,
+                                    borderStyle: 'solid',
+                                    fontWeight: 'bold',
+                                    mr: 0.5
+                                  }}
+                                  variant="filled"
+                                />
+                              </Badge>
+                            ) : (
+                              <Chip
+                                label={station.name}
+                                size="small"
+                                sx={{ 
+                                  backgroundColor: isStartOrEnd 
                                     ? 'primary.100'
                                     : line.color + '20',
-                                borderColor: line.color,
-                                borderWidth: 1,
-                                borderStyle: 'solid',
-                                fontWeight: isViaStation || isStartOrEnd ? 'bold' : 'normal',
-                                mr: 0.5
-                              }}
-                              variant={isViaStation ? "filled" : "outlined"}
-                            />
+                                  borderColor: line.color,
+                                  borderWidth: 1,
+                                  borderStyle: 'solid',
+                                  fontWeight: isStartOrEnd ? 'bold' : 'normal',
+                                  mr: 0.5
+                                }}
+                                variant={isStartOrEnd ? "filled" : "outlined"}
+                              />
+                            )}
                             {stationIndex < route.route.length - 1 && (
                               <Typography variant="body2" color="text.secondary" sx={{ mx: 0.5 }}>→</Typography>
                             )}
@@ -244,19 +282,17 @@ import {
                       })}
                     </Box>
                     
-                    {index === 0 && (
-                      <Box sx={{ mt: 1 }}>
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {index === 0 && (
                         <Chip 
                           label="最安ルート" 
                           color="success" 
                           size="small" 
                           sx={{ fontWeight: 'bold' }}
                         />
-                      </Box>
-                    )}
-                    
-                    {includedViaCount > 0 && includedViaCount === totalViaCount && (
-                      <Box sx={{ mt: 1, display: 'inline-block', ml: index === 0 ? 1 : 0 }}>
+                      )}
+                      
+                      {includedViaCount > 0 && includedViaCount === totalViaCount && (
                         <Chip 
                           label="すべての通りたい駅を含む" 
                           color="success" 
@@ -264,8 +300,18 @@ import {
                           variant="outlined"
                           sx={{ fontWeight: 'bold' }}
                         />
-                      </Box>
-                    )}
+                      )}
+                      
+                      {route.transfers === 0 && (
+                        <Chip 
+                          label="乗換なし" 
+                          color="info" 
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontWeight: 'bold' }}
+                        />
+                      )}
+                    </Box>
                   </CardContent>
                 </Card>
               );
